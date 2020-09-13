@@ -196,7 +196,6 @@ namespace PSYCHO.AutoCam
                                 return;
                             }
 
-                            MyAPIGateway.Utilities.ShowNotification("LULZ");
                             // HACK this is how MyCockpit.Rotate() does things so I kinda have to use these magic numbers.
                             var num = MyAPIGateway.Input.GetMouseSensitivity() * 0.13f;
 
