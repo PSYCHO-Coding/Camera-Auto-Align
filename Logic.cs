@@ -72,6 +72,7 @@ namespace PSYCHO.AutoCam
 
         bool isInFirstPersonView = false;
         IMyControllableEntity ControlledObject;
+        IMyControllableEntity RefController;
 
         bool CameraAutoAlignEnabled = true;
 
@@ -121,6 +122,9 @@ namespace PSYCHO.AutoCam
                 var camCtrl = MyAPIGateway.Session.CameraController;
                 var controller = MyAPIGateway.Session.ControlledObject as Sandbox.Game.Entities.IMyControllableEntity; // Avoiding ambiguity.
 
+                if (camCtrl == null || controller == null)
+                    return;
+
                 if (isInFirstPersonView != camCtrl.IsInFirstPersonView)
                 {
                     isInFirstPersonView = camCtrl.IsInFirstPersonView;
@@ -150,24 +154,77 @@ namespace PSYCHO.AutoCam
                     {
                         alignTick = -1;
 
-                        if (camCtrl != null && controller != null)
+                        // Slight change, only allow auto-align on cockpits and characters thrid person.
+                        if (controller is IMyRemoteControl)
                         {
-                            if (controller is IMyShipController)
-                            {
-                                // HACK this is how MyCockpit.Rotate() does things so I kinda have to use these magic numbers.
-                                var num = MyAPIGateway.Input.GetMouseSensitivity() * 0.13f;
+                            /*
+                            if (RefController == null)
+                                return;
 
-                                if (camCtrl.IsInFirstPersonView)
-                                    camCtrl.Rotate(new Vector2(controller.HeadLocalXAngle / num, controller.HeadLocalYAngle / num), 0);
-                                else
-                                    camCtrl.Rotate(new Vector2((controller.HeadLocalXAngle + shipCamHeightOffset) / num, (controller.HeadLocalYAngle) / num), 0);
-                            }
-                            else
+                            var shipController = controller as IMyShipController;
+                            if (shipController.GetShipSpeed() < 0.1)
                             {
-                                // HACK this is how MyCharacter.RotateHead() does things so I kinda have to use these magic numbers.
-                                if (!camCtrl.IsInFirstPersonView)
-                                    camCtrl.Rotate(new Vector2(controller.HeadLocalXAngle * 2, controller.HeadLocalYAngle * 2), 0);
+                                alignTick = 0;
+                                return;
                             }
+
+                            MyAPIGateway.Utilities.ShowNotification("LULZ");
+                            // HACK this is how MyCockpit.Rotate() does things so I kinda have to use these magic numbers.
+                            var num = MyAPIGateway.Input.GetMouseSensitivity() * 0.13f;
+
+                            if (camCtrl.IsInFirstPersonView)
+                                camCtrl.Rotate(new Vector2(RefController.HeadLocalXAngle / num, RefController.HeadLocalYAngle / num), 0);
+                            else
+                                camCtrl.Rotate(new Vector2((RefController.HeadLocalXAngle + shipCamHeightOffset) / num, (RefController.HeadLocalYAngle) / num), 0);
+                            */
+                        }
+                        else if (controller is IMyShipController)
+                        {
+                            //RefController = controller;
+
+                            var shipController = controller as IMyShipController;
+
+                            if (!shipController.CanControlShip)
+                            {
+                                alignTick = -1;
+                                return;
+                            }
+
+                            if (shipController.GetShipSpeed() < 0.1)
+                            {
+                                alignTick = 0;
+                                return;
+                            }
+
+                            MyAPIGateway.Utilities.ShowNotification("LULZ");
+                            // HACK this is how MyCockpit.Rotate() does things so I kinda have to use these magic numbers.
+                            var num = MyAPIGateway.Input.GetMouseSensitivity() * 0.13f;
+
+                            if (camCtrl.IsInFirstPersonView)
+                                camCtrl.Rotate(new Vector2(controller.HeadLocalXAngle / num, controller.HeadLocalYAngle / num), 0);
+                            else
+                                camCtrl.Rotate(new Vector2((controller.HeadLocalXAngle + shipCamHeightOffset) / num, (controller.HeadLocalYAngle) / num), 0);
+                        }
+                        else if (controller is IMyCharacter)
+                        {
+                            var playerChar = controller as IMyCharacter;
+                            if (playerChar.Physics.Speed < 0.1)
+                            {
+                                alignTick = 0;
+                                return;
+                            }
+
+                            // HACK this is how MyCharacter.RotateHead() does things so I kinda have to use these magic numbers.
+                            if (!camCtrl.IsInFirstPersonView)
+                                camCtrl.Rotate(new Vector2(controller.HeadLocalXAngle * 2, controller.HeadLocalYAngle * 2), 0);
+                        }
+                        else
+                        {
+                            /*
+                            // HACK this is how MyCharacter.RotateHead() does things so I kinda have to use these magic numbers.
+                            if (!camCtrl.IsInFirstPersonView)
+                                camCtrl.Rotate(new Vector2(controller.HeadLocalXAngle * 2, controller.HeadLocalYAngle * 2), 0);
+                            */
                         }
                     }
                 }
